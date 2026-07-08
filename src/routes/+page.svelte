@@ -120,7 +120,7 @@
                 <!-- FRONT FACE -->
                 <div class="card-face front">
                     {#if currentCard.frontimage}
-                        <img class="card-img-full" src={currentCard.frontimage} alt={currentCard.question} />
+                        <img class="card-img" src={currentCard.frontimage} alt={currentCard.question} />
                     {:else}
                         <h2>{currentCard.question}</h2>
                     {/if}
@@ -135,7 +135,7 @@
                 <!-- BACK FACE -->
                 <div class="card-face back">
                     {#if currentCard.backimage}
-                        <img class="card-img-full" src={currentCard.backimage} alt={currentCard.answer} />
+                        <img class="card-img" src={currentCard.backimage} alt={currentCard.answer} />
                     {:else}
                         <h2>{currentCard.answer}</h2>
                     {/if}
