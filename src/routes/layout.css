@@ -171,33 +171,49 @@ button:hover,
     background: var(--primary-hover);
 }
 
-.filter-bar {
+.filter-panel {
+    width: 100%;
+    background: var(--bg-card-front);
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px var(--shadow-card);
+    margin-bottom: 1.5rem;
     display: flex;
-    gap: 8px;
-    margin-bottom: 2rem;
-    flex-wrap: wrap;
-    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
 }
 
-.filter-btn {
-    background: var(--bg-muted);
+.filter-group h3 {
+    margin: 0 0 8px 0;
+    font-size: 0.9rem;
     color: var(--text-muted);
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    border: none;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Specific styling to make Tag elements visually distinct from Category buttons */
+.tag-btn {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--text-hint);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: normal;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
-.filter-btn:hover {
-    filter: brightness(0.95);
+.tag-btn:hover {
+    background: var(--bg-muted);
+    color: var(--primary);
+    border-color: var(--primary);
 }
 
-.filter-btn.active {
-    background: var(--primary);
+.tag-btn.active {
+    background: var(--text-muted);
     color: var(--text-light);
+    border-color: var(--text-muted);
 }
 
 .empty-state {
@@ -207,4 +223,13 @@ button:hover,
 
 p {
     white-space: pre-line;
+}
+
+.card-img {
+    max-width: 90%;       /* Leaves a clean margin around the card edges */
+    max-height: 100%;    /* Allows the image to expand vertically without crowding out layout features */
+    object-fit: contain;  /* Automatically scales cleanly to avoid stretching or distorting */
+    border-radius: 8px;   /* Smoothly rounds the image corners */
+    margin: 0 auto;
+    display: block;
 }

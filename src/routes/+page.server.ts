@@ -13,12 +13,14 @@ export async function load() {
 	const cards = parsed.data.map((row, index) => ({
 		id: `card-${index}`,
 		question: row.question,
+		frontsubtext: row.frontsubtext || row['Front Subtext'] || '',
 		answer: row.answer,
+		backsubtext: row.backsubtext || row['Back Subtext'] || '',
 		category: row.category || 'General',
 		tags: row.tags ? row.tags.split(',').map(t => t.trim()) : [],
 		notes: row.notes || '',
-		frontsubtext: row.frontsubtext || row['Front Subtext'] || '',
-		backsubtext: row.backsubtext || row['Back Subtext'] || ''
+		frontimage: row.frontimage || row['frontimage'] || '',
+		backimage: row.backimage || row['backimage'] || ''
 	}));
 
 		return { cards };
