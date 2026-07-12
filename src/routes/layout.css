@@ -156,6 +156,7 @@ main.container {
     gap: 12px;
     width: 100%;
     margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
 }
 
 /* Base styles for the new scoring buttons */

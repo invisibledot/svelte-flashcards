@@ -96,11 +96,8 @@
 </script>
 
 <main class="container">
-<a href="/" class="back-hub-link">
-        <span>← Back to Hub</span>
-    </a>
     <!-- Review Mode Toggle Row -->
-    <div style="margin-bottom: 1rem; text-align: right;">
+    <div style="margin-top: 1rem; margin-bottom: 1rem;text-align: right;">
         <button 
             class="tag-btn" 
             style="background: {reviewWrongOnly ? '#ef4444' : 'transparent'}; color: {reviewWrongOnly ? 'white' : 'var(--text-muted)'}; border-color: {reviewWrongOnly ? '#ef4444' : 'var(--text-hint)'}; font-weight: 600;"
@@ -109,16 +106,6 @@
             🚨 Review Missed Cards Only ({Object.values(cardScores).filter(v => v === 'incorrect').length})
         </button>
     </div>
-
-    <!-- 🛠️ RESTORED FILTER PANEL COMPONENT HERE -->
-    <FilterPanel 
-        {categories} 
-        {tags} 
-        {activeCategories} 
-        {activeTags} 
-        onToggleCategory={toggleCategory} 
-        onToggleTag={toggleTag} 
-    />
 
     {#if currentCard}
         <Flashcard 
@@ -137,7 +124,19 @@
     {:else}
         <div class="empty-state">
             <p>Inga kort matchar valda filter.</p>
-            <p style="font-size: 0.9rem; color: var(--text-muted);">Try picking different filters above!</p>
+            <p style="font-size: 0.9rem; color: var(--text-muted);">Try picking different filters below!</p>
         </div>
     {/if}
+
+    <FilterPanel 
+        {categories} 
+        {tags} 
+        {activeCategories} 
+        {activeTags} 
+        onToggleCategory={toggleCategory} 
+        onToggleTag={toggleTag} 
+    />
+    <a href="/" class="back-hub-link">
+        <span>← Back to Hub</span>
+    </a>
 </main>
