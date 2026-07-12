@@ -5,6 +5,7 @@
 
     let { data } = $props();
     const allCards = data.cards;
+    const subject = data.subject;
     
     const categories = ['All', ...new Set(allCards.map(c => c.category))];
     const tags = [...new Set(allCards.flatMap(c => c.tags || []))];
@@ -13,45 +14,71 @@
     let activeTags = $state(new Set());
     let currentIndex = $state(0);
     let isFlipped = $state(false);
-    let reviewWrongOnly = $state(false);
 
-    // 🔄 1. Load scores from localStorage on startup
-    let cardScores = $state({});
-    
+    // 🔄 Leitner State System Matrix
+    let sessionCount = $state(1);
+    let cardProfiles = $state({}); // Stores: { "cardId": { box: 2 } }
+
+    // Load state safely on browser launch (runs client-side only)
     $effect(() => {
-        const savedScores = localStorage.getItem('flashcard-scores');
-        if (savedScores) {
-            try {
-                cardScores = JSON.parse(savedScores);
-            } catch (e) {
-                console.error("Failed to parse saved flashcard scores:", e);
-            }
-        }
+        const savedProfiles = localStorage.getItem(`flashcard-profiles-${subject}`);
+        const savedSession = localStorage.getItem(`flashcard-session-${subject}`);
+        if (savedProfiles) cardProfiles = JSON.parse(savedProfiles);
+        if (savedSession) sessionCount = parseInt(savedSession, 10) || 1;
     });
 
-    // 🔄 2. Automatically save scores to localStorage whenever cardScores is updated
+    // Automatically synchronize profile adjustments to local storage
     $effect(() => {
-        const scoreString = JSON.stringify(cardScores);
-        localStorage.setItem('flashcard-scores', scoreString);
+        localStorage.setItem(`flashcard-profiles-${subject}`, JSON.stringify(cardProfiles));
+        localStorage.setItem(`flashcard-session-${subject}`, sessionCount.toString());
     });
 
-    // Filter Engine
+    // 🎯 Clean Spaced Repetition Filter Engine (Duplicates Removed)
     let filteredCards = $derived(
         allCards.filter(card => {
             const matchesCategory = activeCategories.has('All') || activeCategories.has(card.category);
             const matchesTags = activeTags.size === 0 || card.tags.some(t => activeTags.has(t));
-            const matchesWrongFilter = !reviewWrongOnly || cardScores[card.id] === 'incorrect';
             
-            return matchesCategory && matchesTags && matchesWrongFilter;
+            // Fetch current box profile level (Defaults to Box 1)
+            const currentBox = cardProfiles[card.id]?.box || 1;
+
+            // Leitner Interval Math:
+            let matchesInterval = true;
+            if (currentBox === 2 && sessionCount % 2 !== 0) matchesInterval = false;
+            if (currentBox === 3 && sessionCount % 4 !== 0) matchesInterval = false;
+
+            return matchesCategory && matchesTags && matchesInterval;
         })
     );
 
     let currentCard = $derived(filteredCards[currentIndex] || null);
 
-    function markCard(status) {
+    // 🚀 Leitner Card Progression Manager (Cleaned up)
+    function markCard(isCorrect) {
         if (!currentCard) return;
-        cardScores[currentCard.id] = status;
-        setTimeout(() => { nextCard(); }, 200);
+
+        const currentBox = cardProfiles[currentCard.id]?.box || 1;
+        let nextBox = currentBox;
+
+        if (isCorrect) {
+            nextBox = Math.min(3, currentBox + 1); // Max out at Box 3
+        } else {
+            nextBox = 1; // Drop back down on failure
+        }
+
+        cardProfiles[currentCard.id] = { box: nextBox };
+
+        setTimeout(() => {
+            // Check if we just completed the last card in the active queue
+            if (currentIndex >= filteredCards.length - 1) {
+                sessionCount += 1;
+                currentIndex = 0;
+                isFlipped = false;
+                alert(`🎉 Session complete! Advancing to Study Session #${sessionCount}. Cards you know well have been spaced out.`);
+            } else {
+                nextCard();
+            }
+        }, 200);
     }
 
     function toggleCategory(category) {
@@ -96,17 +123,25 @@
 </script>
 
 <main class="container">
-    <!-- Review Mode Toggle Row -->
-    <div style="margin-top: 1rem; margin-bottom: 1rem;text-align: right;">
-        <button 
-            class="tag-btn" 
-            style="background: {reviewWrongOnly ? '#ef4444' : 'transparent'}; color: {reviewWrongOnly ? 'white' : 'var(--text-muted)'}; border-color: {reviewWrongOnly ? '#ef4444' : 'var(--text-hint)'}; font-weight: 600;"
-            onclick={() => { reviewWrongOnly = !reviewWrongOnly; currentIndex = 0; isFlipped = false; }}
-        >
-            🚨 Review Missed Cards Only ({Object.values(cardScores).filter(v => v === 'incorrect').length})
-        </button>
+    <!-- 1. Navigation Element positioned up top -->
+    <a href="/" class="back-hub-link">
+        <span>← Back to Hub</span>
+    </a>
+
+    <!-- 2. Spaced Repetition Statistics Panel -->
+    <div class="filter-panel" style="margin-bottom: 1rem; font-size: 0.85rem; padding: 12px;">
+        <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 6px;">
+            <span>📅 Study Session: #{sessionCount}</span>
+            <span style="color: var(--primary);">📝 Queue: {filteredCards.length} left</span>
+        </div>
+        <div style="display: flex; gap: 8px; color: var(--text-muted); justify-content: space-between; border-top: 1px solid var(--bg-app); padding-top: 6px;">
+            <span>Box 1 (Daily): {allCards.filter(c => (cardProfiles[c.id]?.box || 1) === 1).length}</span>
+            <span>Box 2 (Every 2): {allCards.filter(c => cardProfiles[c.id]?.box === 2).length}</span>
+            <span>Box 3 (Every 4): {allCards.filter(c => cardProfiles[c.id]?.box === 3).length}</span>
+        </div>
     </div>
 
+    <!-- 3. Interactive Core Space -->
     {#if currentCard}
         <Flashcard 
             {currentCard} 
@@ -122,12 +157,13 @@
             onMarkCard={markCard} 
         />
     {:else}
-        <div class="empty-state">
+        <div class="empty-state" style="margin-top: 2rem;">
             <p>Inga kort matchar valda filter.</p>
-            <p style="font-size: 0.9rem; color: var(--text-muted);">Try picking different filters below!</p>
+            <p style="font-size: 0.9rem; color: var(--text-muted);">Try picking different filters above or wait for the next session cycle!</p>
         </div>
     {/if}
 
+    <!-- 4. Category & Tag Filters panel -->
     <FilterPanel 
         {categories} 
         {tags} 
@@ -136,7 +172,4 @@
         onToggleCategory={toggleCategory} 
         onToggleTag={toggleTag} 
     />
-    <a href="/" class="back-hub-link">
-        <span>← Back to Hub</span>
-    </a>
 </main>

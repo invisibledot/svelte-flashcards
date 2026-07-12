@@ -4,15 +4,14 @@
 
 <div class="controls">
     {#if isFlipped}
-        <!-- Display Grading Buttons on the Back of the Card -->
-        <button class="score-btn incorrect" onclick={() => onMarkCard('incorrect')}>
-            ✕ Wrong
+        <!-- Modified to pass true/false parameters to our calculation engine -->
+        <button class="score-btn incorrect" onclick={() => onMarkCard(false)}>
+            ✕ Forgot
         </button>
-        <button class="score-btn correct" onclick={() => onMarkCard('correct')}>
-            ✓ Right
+        <button class="score-btn correct" onclick={() => onMarkCard(true)}>
+            ✓ Remembered
         </button>
     {:else}
-        <!-- Display Standard Navigation on the Front of the Card -->
         <button class="nav-btn" onclick={onPrev}>Previous</button>
         <button class="nav-btn" onclick={onFlip}>Flip</button>
         <button class="nav-btn" onclick={onNext}>Next</button>
