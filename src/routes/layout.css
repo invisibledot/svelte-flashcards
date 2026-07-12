@@ -38,8 +38,12 @@ body,
     color: var(--text-main);
 }
 
+/* 📱 REWRITTEN: Changed from fixed 400px to dynamic maximum constraints with side padding */
 main.container {
-    width: 400px;
+    width: 100%;
+    max-width: 420px;
+    padding-left: 16px;
+    padding-right: 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -148,14 +152,49 @@ main.container {
 }
 
 .controls {
-    margin-top: 1.5rem;
     display: flex;
-    gap: 10px;
+    gap: 12px;
+    width: 100%;
+    margin-top: 1.5rem;
+}
+
+/* Base styles for the new scoring buttons */
+.score-btn {
+    flex: 1;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.1s ease, background-color 0.2s ease;
+    color: white;
+}
+
+.score-btn:active {
+    transform: scale(0.97);
+}
+
+/* Red / Incorrect Style */
+.score-btn.incorrect {
+    background-color: #ef4444; /* Vivid Red */
+}
+.score-btn.incorrect:hover {
+    background-color: #dc2626;
+}
+
+/* Green / Correct Style */
+.score-btn.correct {
+    background-color: #22c55e; /* Vivid Green */
+}
+.score-btn.correct:hover {
+    background-color: #16a34a;
 }
 
 /* Universal Button Styles */
 button, 
 .nav-btn {
+    flex: 1;
     padding: 8px 16px;
     border: none;
     background: var(--primary);
@@ -181,6 +220,7 @@ button:hover,
     display: flex;
     flex-direction: column;
     gap: 12px;
+    box-sizing: border-box;
 }
 
 .filter-group h3 {
@@ -189,6 +229,21 @@ button:hover,
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
+}
+
+/* 📱 UPDATED: Replaced rigid layout properties with dynamic flex-wrapping */
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+}
+
+/* 📱 NEW: Added specific filter button sizing modifications */
+.filter-btn {
+    flex: initial; /* Prevents button blocks from expanding randomly */
+    padding: 6px 12px;
+    font-size: 0.85rem;
 }
 
 /* Specific styling to make Tag elements visually distinct from Category buttons */
@@ -202,6 +257,7 @@ button:hover,
     font-weight: normal;
     cursor: pointer;
     transition: all 0.2s ease;
+    flex: initial;
 }
 
 .tag-btn:hover {
@@ -232,4 +288,89 @@ p {
     border-radius: 8px;   /* Smoothly rounds the image corners */
     margin: 0 auto;
     display: block;
+}
+
+.hub-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    margin-top: 2rem;
+}
+
+.hub-header h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+}
+
+.hub-header p {
+    color: var(--text-muted);
+    font-size: 1rem;
+}
+
+/* Dashboard Grid Framework */
+.subject-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+}
+
+/* Interactive Navigation Panels */
+.subject-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-card-front);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px var(--shadow-card);
+    text-decoration: none;
+    color: var(--text-main);
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    border: 2px solid transparent;
+    box-sizing: border-box;
+}
+
+.subject-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.15);
+    border-color: var(--primary);
+}
+
+.subject-badge {
+    font-size: 0.85rem;
+    background: var(--bg-muted);
+    color: var(--primary);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 700;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.subject-card:hover .subject-badge {
+    background: var(--primary);
+    color: var(--text-light);
+}
+
+.back-hub-link {
+    align-self: flex-start;      /* Pins the button to the left side of your container */
+    display: inline-flex;
+    align-items: center;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    padding: 6px 12px;
+    border-radius: 6px;
+    background: transparent;
+    transition: all 0.2s ease;
+}
+
+.back-hub-link:hover {
+    color: var(--primary);
+    background: var(--bg-muted); /* Soft indigo tint highlight background on hover */
 }
