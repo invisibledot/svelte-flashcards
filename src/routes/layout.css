@@ -282,12 +282,14 @@ p {
     white-space: pre-line;
 }
 
-.card-img {
+.card-image-hero {
     max-width: 90%;       /* Leaves a clean margin around the card edges */
     max-height: 100%;    /* Allows the image to expand vertically without crowding out layout features */
     object-fit: contain;  /* Automatically scales cleanly to avoid stretching or distorting */
     border-radius: 8px;   /* Smoothly rounds the image corners */
     margin: 0 auto;
+    margin-top: 1rem;
+    margin-bottom:1rem;
     display: block;
 }
 
@@ -374,4 +376,23 @@ p {
 .back-hub-link:hover {
     color: var(--primary);
     background: var(--bg-muted); /* Soft indigo tint highlight background on hover */
+}
+
+.fade-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    opacity: 1;
+    transition: opacity 0.2s ease-in-out;
+    box-sizing: border-box;
+    padding: 20px;
+}
+
+.fade-content.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0s;
 }

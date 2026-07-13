@@ -14,6 +14,7 @@
     let activeTags = $state(new Set());
     let currentIndex = $state(0);
     let isFlipped = $state(false);
+    let isTransitioning = $state(false);
 
     // 🔄 Leitner State System Matrix
     let sessionCount = $state(1);
@@ -57,28 +58,36 @@
     function markCard(isCorrect) {
         if (!currentCard) return;
 
+        // Process Leitner scores immediately
         const currentBox = cardProfiles[currentCard.id]?.box || 1;
-        let nextBox = currentBox;
-
-        if (isCorrect) {
-            nextBox = Math.min(3, currentBox + 1); // Max out at Box 3
-        } else {
-            nextBox = 1; // Drop back down on failure
-        }
-
+        let nextBox = isCorrect ? Math.min(3, currentBox + 1) : 1;
         cardProfiles[currentCard.id] = { box: nextBox };
 
+        // 🚀 ACTIVATE THE SHIELD: Blank out all text immediately before the turn begins
+        isTransitioning = true;
+        isFlipped = false;
+
+        // Wait for the physical card body to turn back around completely blank
         setTimeout(() => {
-            // Check if we just completed the last card in the active queue
             if (currentIndex >= filteredCards.length - 1) {
-                sessionCount += 1;
                 currentIndex = 0;
-                isFlipped = false;
-                alert(`🎉 Session complete! Advancing to Study Session #${sessionCount}. Cards you know well have been spaced out.`);
+                sessionCount += 1;
+                
+                setTimeout(() => {
+                    alert(`🎉 Session complete! Advancing to Study Session #${sessionCount}.`);
+                    // Deactivate shield only after data pools settle
+                    isTransitioning = false; 
+                }, 50);
             } else {
-                nextCard();
+                currentIndex += 1;
+                
+                // 🚀 Give Svelte a tiny 50ms window to render the text inside the front page container
+                // before dropping the transparency shield. This completely eliminates any layout flickering!
+                setTimeout(() => {
+                    isTransitioning = false;
+                }, 10);
             }
-        }, 200);
+        }, 400); // Matches your CSS animation turn duration
     }
 
     function toggleCategory(category) {
@@ -111,14 +120,28 @@
 
     function nextCard() {
         if (filteredCards.length === 0) return;
-        isFlipped = false;
-        currentIndex = (currentIndex + 1) % filteredCards.length;
+        
+        if (isFlipped) {
+            isFlipped = false;
+            setTimeout(() => {
+                currentIndex = (currentIndex + 1) % filteredCards.length;
+            }, 400);
+        } else {
+            currentIndex = (currentIndex + 1) % filteredCards.length;
+        }
     }
 
     function prevCard() {
         if (filteredCards.length === 0) return;
-        isFlipped = false;
-        currentIndex = (currentIndex - 1 + filteredCards.length) % filteredCards.length;
+        
+        if (isFlipped) {
+            isFlipped = false;
+            setTimeout(() => {
+                currentIndex = (currentIndex - 1 + filteredCards.length) % filteredCards.length;
+            }, 400);
+        } else {
+            currentIndex = (currentIndex - 1 + filteredCards.length) % filteredCards.length;
+        }
     }
 </script>
 
@@ -146,7 +169,8 @@
         <Flashcard 
             {currentCard} 
             {isFlipped} 
-            onFlip={() => isFlipped = !isFlipped} 
+            {isTransitioning}
+            onFlip={() => { if (!isTransitioning) isFlipped = !isFlipped; }} 
         />
 
         <Controls 

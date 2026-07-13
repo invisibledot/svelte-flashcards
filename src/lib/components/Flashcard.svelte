@@ -1,5 +1,5 @@
 <script>
-    let { currentCard, isFlipped, onFlip } = $props();
+    let { currentCard, isFlipped, isTransitioning, onFlip } = $props();
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -9,35 +9,43 @@
         
         <!-- FRONT FACE -->
         <div class="card-face front">
-            {#if currentCard.frontimage}
-                <img class="card-img" src={currentCard.frontimage} alt={currentCard.question} />
-            {:else}
-                <h2>{currentCard.question}</h2>
-            {/if}
-            
-            {#if currentCard.frontsubtext}
-                <p class="card-subtext">{currentCard.frontsubtext}</p>
-            {/if}
-            
-            <p class="hint">Click to reveal answer</p>
+            <div class="fade-content" class:hidden={isFlipped || isTransitioning}>
+                <span class="category">{currentCard?.category}</span>
+                
+                {#if currentCard?.frontimage}
+                    <!-- 🖼️ Image-only layout: Question text is moved strictly to the alt attribute -->
+                    <img src={currentCard.frontimage} alt={currentCard?.question || 'Question Visual'} class="card-image-hero" />
+                {:else}
+                    <!-- 📝 Text fallback layout -->
+                    <h2>{currentCard?.question}</h2>
+                {/if}
+
+                {#if currentCard?.frontsubtext}
+                    <p class="card-subtext">{currentCard.frontsubtext}</p>
+                {/if}
+            </div>
         </div>
 
         <!-- BACK FACE -->
         <div class="card-face back">
-            {#if currentCard.backimage}
-                <img class="card-img" src={currentCard.backimage} alt={currentCard.answer} />
-            {:else}
-                <h2>{currentCard.answer}</h2>
-            {/if}
-            
-            {#if currentCard.backsubtext}
-                <p class="card-subtext">{currentCard.backsubtext}</p>
-            {/if}
-            
-            {#if currentCard.notes}
-                <p class="notes">{currentCard.notes}</p>
-            {/if}
-        </div>
+            <div class="fade-content" class:hidden={!isFlipped || isTransitioning}>
+                
+                {#if currentCard?.backimage}
+                    <!-- 🖼️ Image-only layout: Answer text is moved strictly to the alt attribute -->
+                    <img src={currentCard.backimage} alt={currentCard?.answer || 'Answer Visual'} class="card-image-hero" />
+                {:else}
+                    <!-- 📝 Text fallback layout -->
+                    <h2>{currentCard?.answer}</h2>
+                {/if}
 
+                {#if currentCard?.backsubtext}
+                    <p class="card-subtext" style="color: var(--bg-muted);">{currentCard.backsubtext}</p>
+                {/if}
+                {#if currentCard?.notes}
+                    <p class="notes">{currentCard.notes}</p>
+                {/if}
+            </div>
+        </div>
+        
     </div>
 </div>
