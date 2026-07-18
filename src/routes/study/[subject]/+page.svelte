@@ -16,78 +16,86 @@
     let isFlipped = $state(false);
     let isTransitioning = $state(false);
 
-    // 🔄 Leitner State System Matrix
-    let sessionCount = $state(1);
-    let cardProfiles = $state({}); // Stores: { "cardId": { box: 2 } }
+    // 🔄 Time-Based Spacing State Matrix
+    // Stores profiles like: { "cardId": { level: 2, availableAt: 1718919000000 } }
+    let cardProfiles = $state({}); 
 
-    // Load state safely on browser launch (runs client-side only)
+    // Define real-world time spacing intervals per mastery tier (in milliseconds)
+    const TIER_INTERVALS = {
+        1: 0,                          // Level 1: Review immediately
+        2: 12 * 60 * 60 * 1000,        // Level 2: 12 Hours (Perfect for morning/evening review loops)
+        3: 3 * 24 * 60 * 60 * 1000,    // Level 3: 3 Days
+        4: 7 * 24 * 60 * 60 * 1000,    // Level 4: 7 Days
+        5: 21 * 24 * 60 * 60 * 1000,   // Level 5: 21 Days (Absolute Mastery)
+    };
+
+    // Safe launch synchronization
     $effect(() => {
-        const savedProfiles = localStorage.getItem(`flashcard-profiles-${subject}`);
-        const savedSession = localStorage.getItem(`flashcard-session-${subject}`);
+        const savedProfiles = localStorage.getItem(`flashcard-time-profiles-${subject}`);
         if (savedProfiles) cardProfiles = JSON.parse(savedProfiles);
-        if (savedSession) sessionCount = parseInt(savedSession, 10) || 1;
     });
 
-    // Automatically synchronize profile adjustments to local storage
     $effect(() => {
-        localStorage.setItem(`flashcard-profiles-${subject}`, JSON.stringify(cardProfiles));
-        localStorage.setItem(`flashcard-session-${subject}`, sessionCount.toString());
+        localStorage.setItem(`flashcard-time-profiles-${subject}`, JSON.stringify(cardProfiles));
     });
 
-    // 🎯 Clean Spaced Repetition Filter Engine (Duplicates Removed)
+    // 🎯 Filter Engine using strict Date comparisons
     let filteredCards = $derived(
         allCards.filter(card => {
             const matchesCategory = activeCategories.has('All') || activeCategories.has(card.category);
             const matchesTags = activeTags.size === 0 || card.tags.some(t => activeTags.has(t));
             
-            // Fetch current box profile level (Defaults to Box 1)
-            const currentBox = cardProfiles[card.id]?.box || 1;
+            // Time Check: Pull down current rest state timestamp
+            const profile = cardProfiles[card.id];
+            const now = Date.now();
+            
+            // If the card has a futuristic restriction date that hasn't passed yet, hide it!
+            const isAvailable = !profile || !profile.availableAt || now >= profile.availableAt;
 
-            // Leitner Interval Math:
-            let matchesInterval = true;
-            if (currentBox === 2 && sessionCount % 2 !== 0) matchesInterval = false;
-            if (currentBox === 3 && sessionCount % 4 !== 0) matchesInterval = false;
-
-            return matchesCategory && matchesTags && matchesInterval;
+            return matchesCategory && matchesTags && isAvailable;
         })
     );
 
     let currentCard = $derived(filteredCards[currentIndex] || null);
 
-    // 🚀 Leitner Card Progression Manager (Cleaned up)
+    // 🚀 Time-Shift Progression Handler
     function markCard(isCorrect) {
         if (!currentCard) return;
 
-        // Process Leitner scores immediately
-        const currentBox = cardProfiles[currentCard.id]?.box || 1;
-        let nextBox = isCorrect ? Math.min(3, currentBox + 1) : 1;
-        cardProfiles[currentCard.id] = { box: nextBox };
+        const currentProfile = cardProfiles[currentCard.id] || { level: 1 };
+        let nextLevel = currentProfile.level;
 
-        // 🚀 ACTIVATE THE SHIELD: Blank out all text immediately before the turn begins
+        if (isCorrect) {
+            nextLevel = Math.min(5, currentProfile.level + 1);
+        } else {
+            nextLevel = 1; // Reset right back to level 1 on failure
+        }
+
+        // Calculate exact point in time this card is allowed to awake
+        const waitTime = TIER_INTERVALS[nextLevel];
+        const nextAvailableTimestamp = Date.now() + waitTime;
+
+        // Commit profile adjustments
+        cardProfiles[currentCard.id] = {
+            level: nextLevel,
+            availableAt: nextAvailableTimestamp
+        };
+
+        // UI Transition Loop
         isTransitioning = true;
         isFlipped = false;
 
-        // Wait for the physical card body to turn back around completely blank
         setTimeout(() => {
-            if (currentIndex >= filteredCards.length - 1) {
+            // Since this card now fails the `isAvailable` test, it will drop out of 
+            // the filteredCards array automatically. We don't always need to increment index!
+            if (currentIndex >= filteredCards.length) {
                 currentIndex = 0;
-                sessionCount += 1;
-                
-                setTimeout(() => {
-                    alert(`🎉 Session complete! Advancing to Study Session #${sessionCount}.`);
-                    // Deactivate shield only after data pools settle
-                    isTransitioning = false; 
-                }, 50);
-            } else {
-                currentIndex += 1;
-                
-                // 🚀 Give Svelte a tiny 50ms window to render the text inside the front page container
-                // before dropping the transparency shield. This completely eliminates any layout flickering!
-                setTimeout(() => {
-                    isTransitioning = false;
-                }, 10);
             }
-        }, 400); // Matches your CSS animation turn duration
+            
+            setTimeout(() => {
+                isTransitioning = false;
+            }, 50);
+        }, 400);
     }
 
     function toggleCategory(category) {
@@ -151,19 +159,42 @@
         <span>← Back to Hub</span>
     </a>
 
-    <!-- 2. Spaced Repetition Statistics Panel -->
-    <div class="filter-panel" style="margin-bottom: 1rem; font-size: 0.85rem; padding: 12px;">
-        <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 6px;">
-            <span>📅 Study Session: #{sessionCount}</span>
-            <span style="color: var(--primary);">📝 Queue: {filteredCards.length} left</span>
+<!-- 📊 Real-Time 5-Tier Spacing Dashboard -->
+    <div class="filter-panel" style="margin-bottom: 1rem; font-size: 0.85rem; padding: 14px; border-left: 4px solid var(--primary);">
+        <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 8px;">
+            <span style="display: flex; align-items: center; gap: 4px;">🧠 Due for Review: {filteredCards.length}</span>
+            <span style="color: var(--text-muted); font-weight: normal;">⏳ Total Resting: {allCards.length - filteredCards.length}</span>
         </div>
-        <div style="display: flex; gap: 8px; color: var(--text-muted); justify-content: space-between; border-top: 1px solid var(--bg-app); padding-top: 6px;">
-            <span>Box 1 (Daily): {allCards.filter(c => (cardProfiles[c.id]?.box || 1) === 1).length}</span>
-            <span>Box 2 (Every 2): {allCards.filter(c => cardProfiles[c.id]?.box === 2).length}</span>
-            <span>Box 3 (Every 4): {allCards.filter(c => cardProfiles[c.id]?.box === 3).length}</span>
+        
+        <!-- Grid layout for the 5 Mastery levels -->
+        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; text-align: center; border-top: 1px solid var(--bg-app); padding-top: 8px; font-size: 0.75rem;">
+            <div style="display: flex; flex-direction: column;">
+                <span style="font-weight: bold; color: #ef4444;">Lvl 1</span>
+                <span style="color: var(--text-muted);">{allCards.filter(c => (cardProfiles[c.id]?.level || 1) === 1).length}</span>
+                <span style="font-size: 0.65rem; color: #ef4444; opacity: 0.8;">0m</span>
+            </div>
+            <div style="display: flex; flex-direction: column;">
+                <span style="font-weight: bold; color: #f97316;">Lvl 2</span>
+                <span style="color: var(--text-muted);">{allCards.filter(c => cardProfiles[c.id]?.level === 2).length}</span>
+                <span style="font-size: 0.65rem; color: var(--text-muted);">12h</span>
+            </div>
+            <div style="display: flex; flex-direction: column;">
+                <span style="font-weight: bold; color: #eab308;">Lvl 3</span>
+                <span style="color: var(--text-muted);">{allCards.filter(c => cardProfiles[c.id]?.level === 3).length}</span>
+                <span style="font-size: 0.65rem; color: var(--text-muted);">3d</span>
+            </div>
+            <div style="display: flex; flex-direction: column;">
+                <span style="font-weight: bold; color: #3b82f6;">Lvl 4</span>
+                <span style="color: var(--text-muted);">{allCards.filter(c => cardProfiles[c.id]?.level === 4).length}</span>
+                <span style="font-size: 0.65rem; color: var(--text-muted);">7d</span>
+            </div>
+            <div style="display: flex; flex-direction: column;">
+                <span style="font-weight: bold; color: #22c55e;">Lvl 5</span>
+                <span style="color: var(--text-muted);">{allCards.filter(c => cardProfiles[c.id]?.level === 5).length}</span>
+                <span style="font-size: 0.65rem; color: #22c55e; font-weight: bold;">21d</span>
+            </div>
         </div>
     </div>
-
     <!-- 3. Interactive Core Space -->
     {#if currentCard}
         <Flashcard 
